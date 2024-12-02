@@ -1,0 +1,29 @@
+{
+  "name": "school-mangement-systme",
+  "version": "1.0.0",
+  "description": "Management system for school",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start:dev": "nodemon server.js",
+    "start:prod": "cross-env NODE_ENV=production nodemon server.js"
+  },
+  "author": "Abdelrahman",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.8.2",
+    "morgan": "^1.10.0",
+    "nodemailer": "^6.9.16",
+    "nodemon": "^3.1.7",
+    "promisify": "^0.0.3",
+    "validator": "^13.12.0"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3"
+  }
+}
