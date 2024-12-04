@@ -12,16 +12,16 @@ router
   );
 
 router
-  .route("/student/:id")
+  .route("/parent/:id")
   .all(authController.protect)
-  .get(
-    authController.restrictTo("admin", "student"),
-    parentController.getParent
-  )
+  .get(authController.restrictTo("admin", "parent"), parentController.getParent)
   .patch(
-    authController.restrictTo("admin", "student"),
+    authController.restrictTo("admin", "parent"),
     parentController.updateParent
   )
-  .delete(authController.restrictTo("student"), parentController.deleteParent);
+  .delete(
+    authController.restrictTo("admin", "parent"),
+    parentController.deleteParent
+  );
 
 module.exports = router;

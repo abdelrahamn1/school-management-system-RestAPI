@@ -21,12 +21,12 @@ router
   .get(
     authController.protect,
     authController.restrictTo("admin", "teacher"),
-    assignmentsController.showAssignmentsClass
+    assignmentsController.getAssignment
   )
   .delete(
     authController.protect,
     authController.restrictTo("admin", "teacher"),
-    assignmentsController.deleteAssignmet
+    assignmentsController.deleteAssignment
   )
   .patch(
     authController.protect,

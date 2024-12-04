@@ -5,24 +5,16 @@ const classController = require("../controllers/classController");
 
 router
   .route("/class")
-  .post(
-    authController.protect,
-    authController.restrictTo("admin"),
-    classController.createClass
-  );
+  .all(authController.protect)
+  .get(authController.restrictTo("admin"), classController.getAllClasses)
+  .post(authController.restrictTo("admin"), classController.createClass);
 
 router
   .route("/class/:id")
-  .patch(
-    authController.protect,
-    authController.restrictTo("admin"),
-    classController.updateClass
-  )
-  .delete(
-    authController.protect,
-    authController.restrictTo("admin"),
-    classController.deleteClass
-  );
+  .all(authController.protect)
+  .get(authController.restrictTo("admin"), classController.getClass)
+  .patch(authController.restrictTo("admin"), classController.updateClass)
+  .delete(authController.restrictTo("admin"), classController.deleteClass);
 
 router
   .route("/class/:id/remove-id")

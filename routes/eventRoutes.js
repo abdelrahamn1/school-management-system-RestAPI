@@ -6,8 +6,6 @@ const authController = require("../controllers/authController");
 // admin only routes
 router.use(authController.protect);
 
-//special routes
-
 //user routes
 router
   .route("/events")

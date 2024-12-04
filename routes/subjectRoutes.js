@@ -8,7 +8,7 @@ router
   .get(
     authController.protect,
     authController.restrictTo("admin"),
-    subjectController.getAllSubject
+    subjectController.getAllSubjects
   )
   .post(
     authController.protect,

@@ -4,7 +4,7 @@ const authController = require("../controllers/authController");
 const feeController = require("../controllers/feeController");
 
 router
-  .route("/fee")
+  .route("/fees")
   .get(
     authController.protect,
     authController.restrictTo("admin"),
@@ -17,7 +17,7 @@ router
   );
 
 router
-  .route("/fee/:id")
+  .route("/fees/:id")
   .all(authController.protect)
   .get(authController.restrictTo("admin"), feeController.getFee)
   .patch(authController.restrictTo("admin"), feeController.updateFee)

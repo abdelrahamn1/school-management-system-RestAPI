@@ -8,12 +8,12 @@ router
   .get(
     authController.protect,
     authController.restrictTo("admin", "teacher"),
-    attendenceController.getAllAttendence
+    attendenceController.getAllAttendance
   )
   .post(
     authController.protect,
     authController.restrictTo("admin", "teacher"),
-    attendenceController.createAttendence
+    attendenceController.createAttendance
   );
 
 router
@@ -21,15 +21,15 @@ router
   .all(authController.protect)
   .get(
     authController.restrictTo("admin", "teacher"),
-    attendenceController.getAttendence
+    attendenceController.getAttendance
   )
   .patch(
     authController.restrictTo("admin", "teacher"),
-    attendenceController.updateAttendence
+    attendenceController.updateAttendance
   )
   .delete(
     authController.restrictTo("admin", "teacher"),
-    attendenceController.deleteAttendence
+    attendenceController.deleteAttendance
   );
 
 module.exports = router;

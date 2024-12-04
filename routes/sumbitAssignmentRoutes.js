@@ -13,7 +13,7 @@ router
   .delete(
     authController.protect,
     authController.restrictTo("admin", "student", "teacher"),
-    assignmentsController.deleteAssignmet
+    assignmentsController.deleteAssignment
   );
 
 module.exports = router;
