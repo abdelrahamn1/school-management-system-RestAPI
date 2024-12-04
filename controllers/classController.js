@@ -1,58 +1,99 @@
 const Class = require("../models/classModel");
 const Teacher = require("../models/teacherModel");
 const Student = require("../models/studentModel");
-const AppError = require("../utils/AppErrorr");
+const AppError = require("../utils/AppErrorr.js");
+
+const applyQueryOptions = require("../utils/queryHelper");
+
+// Utility function to validate teacher and student IDs
+const validateIds = async (ids, model, entityType) => {
+  const validEntities = await model.find({ _id: { $in: ids } });
+  const validEntityIDs = validEntities.map((entity) => entity._id.toString());
+
+  const invalidIds = ids.filter((id) => !validEntityIDs.includes(id));
+
+  if (invalidIds.length > 0) {
+    throw new AppError(
+      `${entityType} IDs not found: ${invalidIds.join(", ")}`,
+      400
+    );
+  }
+
+  return validEntityIDs;
+};
+
+exports.getAllClasses = async (req, res, next) => {
+  try {
+    const query = applyQueryOptions(req, Class);
+    const classes = await query;
+    res.status(200).json({
+      status: "success",
+      result: classes.length,
+      data: classes,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
 
 exports.createClass = async (req, res, next) => {
   try {
-    // check body not empty
-    if (
-      !req.body.name ||
-      !req.body.teachers ||
-      !req.body.students ||
-      req.body.superVisor
-    )
+    const { name, teachers, students, superVisor } = req.body;
+
+    // Check body not empty
+    if (!name || !teachers || !students || !superVisor) {
       return next(
-        new AppError("name and teachersIDs and StudentsIDs is required!", 500)
+        new AppError(
+          "Name, teachers, students, and supervisor are required!",
+          400
+        )
       );
+    }
 
-    // check for ids
-    const validTeachers = await Teacher.find({ _id: req.body.teachers });
-    const vaildStudents = await Student.find({ _id: req.body.students });
+    // Validate teacher and student IDs
+    const validTeachers = await validateIds(teachers, Teacher, "Teacher");
+    const validStudents = await validateIds(students, Student, "Student");
 
-    const vaildteacherIDs = validTeachers.map((teacher) =>
-      teacher._id.toString()
-    );
-    const vaildStudentsIDs = vaildStudents.map((student) =>
-      student._id.toString()
-    );
+    // Validate supervisor
+    const supervisor = await Teacher.findById(superVisor);
+    if (!supervisor)
+      return next(new AppError("Supervisor ID is not valid!", 400));
+    if (!validTeachers.includes(supervisor._id.toString())) {
+      return next(
+        new AppError(
+          "Supervisor must be one of the teachers of the class!",
+          400
+        )
+      );
+    }
 
-    const InavaildTeacher = req.body.teachers.filter(
-      (id) => !vaildteacherIDs.includes(id)
-    );
-    const InavaildStudent = req.body.students.filter(
-      (id) => !vaildStudentsIDs.includes(id)
-    );
-
-    const missingIDs = [InavaildStudent, InavaildTeacher];
-
-    // create Class
+    // Create the class
     const newClass = await Class.create({
-      name: req.body.name,
-      teachers: vaildteacherIDs,
-      students: vaildStudentsIDs,
-      superVisor: req.body.superVisor,
+      name,
+      teachers: validTeachers,
+      students: validStudents,
+      superVisor: superVisor,
     });
 
     res.status(201).json({
       status: "success",
       data: newClass,
-      message:
-        missingIDs.length > 0
-          ? `There are invalid IDs: ${missingIDs.join(
-              " "
-            )}. They were removed automatically.`
-          : "All IDs are valid.",
+      message: "Class created successfully with valid teacher and student IDs.",
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.getClass = async (req, res, next) => {
+  try {
+    const classId = await Class.findById(req.params.id);
+    if (!classId)
+      return next(new AppError("No class found with this ID!", 404));
+
+    res.status(200).json({
+      status: "success",
+      data: classId,
     });
   } catch (err) {
     next(err);
@@ -61,79 +102,46 @@ exports.createClass = async (req, res, next) => {
 
 exports.updateClass = async (req, res, next) => {
   try {
-    //check body
-    if (!req.body.newTeachers && !req.body.newStudents)
-      next(
-        new AppError("newTeachers IDs or newStudents IDs is requirted!", 500)
+    const { newTeachers, newStudents } = req.body;
+
+    // Validate that at least new teachers or new students are provided
+    if (!newTeachers && !newStudents) {
+      return next(
+        new AppError("Either newTeachers or newStudents must be provided!", 400)
       );
-
-    //check for ids
-    const vaildTeachers = await Teacher.find({ _id: req.body.newTeachers });
-    const vaildStudents = await Student.find({ _id: req.body.newStudents });
-
-    //extract ids
-    const teachersIDs = vaildTeachers.map((teacher) => teacher._id.toString());
-    const studentsIDs = vaildStudents.map((student) => student._id.toString());
-
-    // add ids to class
-    const updateCalss = {};
-    if (teachersIDs) {
-      const existingClasses = await Class.find({
-        teachers: { $in: teachersIDs },
-      });
-      if (existingClasses.length > 0) {
-        const existingTeacherIDs = existingClasses
-          .flatMap((classDoc) => classDoc.teachers)
-          .filter((id) => teachersIDs.includes(id.toString()));
-        if (existingTeacherIDs.length > 0) {
-          return next(
-            new AppError(
-              `The following IDs already exist: ${existingTeacherIDs.join(
-                ", "
-              )}`,
-              50
-            )
-          );
-        }
-      }
-      updateCalss.teachers = teachersIDs;
     }
 
-    if (studentsIDs) {
-      // Query classes to check if any of the student IDs already exist
-      const existingClasses = await Class.find({
-        students: { $in: studentsIDs },
-      });
-
-      if (existingClasses.length > 0) {
-        // Collect all existing student IDs
-        const existingStudentIDs = existingClasses
-          .flatMap((classDoc) => classDoc.students)
-          .filter((id) => studentsIDs.includes(id.toString()));
-
-        if (existingStudentIDs.length > 0) {
-          console.log(`Existing IDs: ${existingStudentIDs}`);
-          return next(
-            new AppError(
-              `The following IDs already exist: ${existingStudentIDs.join(
-                ", "
-              )}`,
-              500
-            )
-          );
-        }
-      }
-      updateCalss.students = studentsIDs;
+    // Validate teacher and student IDs
+    if (newTeachers) {
+      const validTeachers = await validateIds(newTeachers, Teacher, "Teacher");
+      req.body.newTeachers = validTeachers;
     }
 
-    const newClassUpdated = await Class.findByIdAndUpdate(
+    if (newStudents) {
+      const validStudents = await validateIds(newStudents, Student, "Student");
+      req.body.newStudents = validStudents;
+    }
+
+    // Update the class
+    const updatedClass = await Class.findByIdAndUpdate(
       req.params.id,
-      { $addToSet: updateCalss },
+      {
+        $addToSet: {
+          teachers: req.body.newTeachers,
+          students: req.body.newStudents,
+        },
+        updatedAt: Date.now(),
+      },
       { new: true, runValidators: true }
     );
+
+    if (!updatedClass) {
+      return next(new AppError("Class not found!", 404));
+    }
+
     res.status(200).json({
-      status: "sucess",
-      data: newClassUpdated,
+      status: "success",
+      data: updatedClass,
     });
   } catch (err) {
     next(err);
@@ -142,12 +150,14 @@ exports.updateClass = async (req, res, next) => {
 
 exports.deleteIDFromClass = async (req, res, next) => {
   try {
-    // Validate body input
-    if (!req.body.teacherId && !req.body.studentId) {
-      return next(new AppError("teacherId or studentId is required!", 400));
-    }
-
     const { teacherId, studentId } = req.body;
+
+    // Validate that at least one of the teacherId or studentId is provided
+    if (!teacherId && !studentId) {
+      return next(
+        new AppError("Either teacherId or studentId must be provided!", 400)
+      );
+    }
 
     // Validate teacherId if provided
     if (teacherId) {
@@ -167,21 +177,16 @@ exports.deleteIDFromClass = async (req, res, next) => {
 
     // Build the update object dynamically
     const updateFields = {};
-    if (teacherId) {
-      updateFields.teachers = teacherId; // Add teacherId to be removed
-    }
-    if (studentId) {
-      updateFields.students = studentId; // Add studentId to be removed
-    }
+    if (teacherId) updateFields.teachers = teacherId;
+    if (studentId) updateFields.students = studentId;
 
-    // Update the class document
+    // Update the class document to remove the teacher or student
     const updatedClass = await Class.findByIdAndUpdate(
       req.params.id,
-      { $pull: updateFields }, // Use $pull to remove IDs
+      { $pull: updateFields },
       { new: true, runValidators: true }
     );
 
-    // Handle case where the class is not found
     if (!updatedClass) {
       return next(new AppError("Class not found!", 404));
     }
@@ -204,18 +209,11 @@ exports.deleteClass = async (req, res, next) => {
         message: `Class with ID ${req.params.id} not found.`,
       });
     }
-    if (req.body.answer !== "yes") {
-      return res.status(400).json({
-        status: "fail",
-        message: `You did not confirm the deletion of class ${req.params.id}`,
-      });
-    } else {
-      await Class.findByIdAndDelete(req.params.id);
-      res.status(204).json({
-        status: "success",
-        data: null,
-      });
-    }
+    await Class.findByIdAndDelete(req.params.id);
+    res.status(204).json({
+      status: "success",
+      data: null,
+    });
   } catch (err) {
     next(err);
   }

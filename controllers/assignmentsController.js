@@ -1,50 +1,79 @@
 const Assignment = require("../models/assignmentModel.js");
+const Class = require("../models/classModel.js");
+const Subject = require("../models/subjectModel.js");
 const AppError = require("../utils/AppErrorr.js");
+const applyQueryOptions = require("../utils/queryHelper");
 
-exports.showAssignmentsClass = async (req, res, next) => {
+// Helper function to validate Class and Subject IDs
+const validateClassAndSubject = async (classID, subjectID) => {
+  const validateClass = classID ? await Class.findById(classID) : null;
+  const validateSubject = subjectID ? await Subject.findById(subjectID) : null;
+
+  if (classID && !validateClass) {
+    return new AppError("Class ID is not valid!", 400);
+  }
+  if (subjectID && !validateSubject) {
+    return new AppError("Subject ID is not valid!", 400);
+  }
+
+  return null;
+};
+
+// Get a single assignment by ID
+exports.getAssignment = async (req, res, next) => {
   try {
-    const classID = req.params.id;
-    if (!classID) return next(new AppError("Class ID is required!", 400));
-
-    const assignmnets = await Assignment.findOne({ class: classID });
-    if (!assignmnets) return next(new AppError("This Class not Founded!", 404));
-
-    if (assignmnets.length < 0)
-      res.status(200).send("no assignments to this class!");
-
+    const assignment = await Assignment.findById(req.params.id);
+    if (!assignment) {
+      return next(new AppError("This assignment not found!", 404));
+    }
     res.status(200).json({
       status: "success",
-      data: assignmnets,
+      data: assignment,
     });
   } catch (err) {
     next(err);
   }
 };
 
+// Get all assignments with query options
 exports.getAllAssignments = async (req, res, next) => {
   try {
-    const assignmnets = await Assignment.find();
-    if (!assignmnets) return next(new AppError("no assignmnets founded!", 404));
-
+    const query = applyQueryOptions(req, Assignment);
+    const assignments = await query;
     res.status(200).json({
       status: "success",
-      results: assignmnets.length,
-      data: assignmnets,
+      results: assignments.length,
+      data: assignments,
     });
   } catch (err) {
     next(err);
   }
 };
 
+// Create a new assignment
 exports.createAssignment = async (req, res, next) => {
   try {
+    const {
+      class: classID,
+      subject: subjectID,
+      title,
+      description,
+      AssigneDate,
+      dueDate,
+    } = req.body;
+
+    // Validate class and subject
+    const validationError = await validateClassAndSubject(classID, subjectID);
+    if (validationError) return next(validationError);
+
+    // Create assignment
     const newAssignment = await Assignment.create({
-      title: req.body.title,
-      description: req.body.description,
-      AssigneDate: req.body.AssigneDate,
-      dueDate: req.body.dueDate,
-      class: req.body.class,
-      subject: req.body.subject,
+      title,
+      description,
+      AssigneDate,
+      dueDate,
+      class: classID,
+      subject: subjectID,
     });
 
     res.status(201).json({
@@ -56,42 +85,55 @@ exports.createAssignment = async (req, res, next) => {
   }
 };
 
+// Update an existing assignment
 exports.updateAssignment = async (req, res, next) => {
   try {
-    const assignmentUpdated = await Assignment.findByIdAndUpdate(
+    const { classID, subjectID } = req.body;
+
+    // Validate class and subject if provided
+    const validationError = await validateClassAndSubject(classID, subjectID);
+    if (validationError) return next(validationError);
+
+    const updatedAssignment = await Assignment.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      { updatedAt: Date.now(), ...req.body },
       { new: true, runValidators: true }
     );
-    if (!assignmentUpdated)
-      return next(new AppError("no Assignment founded!", 404));
 
+    if (!updatedAssignment) {
+      return next(new AppError("No assignment found!", 404));
+    }
+
+    // Collect updated fields to inform the user
     const updateFields = Object.keys(req.body);
 
     res.status(200).json({
       status: "success",
       message:
         updateFields.length > 0
-          ? `[${updateFields.join(" ")}] updated successfuly!`
-          : "updated..!",
-      data: assignmentUpdated,
+          ? `[${updateFields.join(" ")}] updated successfully!`
+          : "Assignment updated!",
+      data: updatedAssignment,
     });
   } catch (err) {
     next(err);
   }
 };
 
-exports.deleteAssignmet = async (req, res, next) => {
+// Delete an assignment
+exports.deleteAssignment = async (req, res, next) => {
   try {
-    if (!(await Assignment.findByIdAndDelete(req.params.id)))
-      return next(new AppError("No Assignment founded !", 404));
-    else {
-      await Assignment.findByIdAndDelete(req.params.id);
-      res.status(204).json({
-        status: "success",
-        data: null,
-      });
+    const assignment = await Assignment.findById(req.params.id);
+    if (!assignment) {
+      return next(new AppError("No assignment found!", 404));
     }
+
+    await assignment.remove();
+
+    res.status(204).json({
+      status: "success",
+      data: null,
+    });
   } catch (err) {
     next(err);
   }

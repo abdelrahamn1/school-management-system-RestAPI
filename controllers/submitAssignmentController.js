@@ -1,33 +1,38 @@
-const submitAssignmnet = require("../models/submissionAssignmentModel");
-const AppError = require("../utils/AppErrorr");
+const SubmissionAssignment = require("../models/submissionAssignmentModel");
+const AppError = require("../utils/AppErrorr.js");
 
-exports.sumbitAssignment = async (req, res, next) => {
+// Create a new assignment submission
+exports.submitAssignment = async (req, res, next) => {
   try {
-    const newsubmitAssignmnet = await submitAssignmnet.create(req.body);
+    const newSubmission = await SubmissionAssignment.create(req.body);
     res.status(201).json({
       status: "success",
-      data: newsubmitAssignmnet,
+      data: newSubmission,
     });
   } catch (err) {
-    next(err);
+    next(new AppError(`Error submitting assignment: ${err.message}`, 500));
   }
 };
 
-exports.removeSumbitAssignment = async (req, res, next) => {
+// Remove an existing assignment submission
+exports.removeSubmissionAssignment = async (req, res, next) => {
   try {
-    const removesubmitAssignmnet = await submitAssignmnet.findById(
-      req.params.id
-    );
-    if (!removesubmitAssignmnet) {
-      return next(new AppError("No submited Assignmnet Founded!", 404));
-    } else {
-      await submitAssignmnet.findByIdAndDelete(req.params.id);
-      res.status(201).json({
-        status: "success",
-        data: null,
-      });
+    const submission = await SubmissionAssignment.findById(req.params.id);
+    if (!submission) {
+      return next(
+        new AppError("No submitted assignment found with this ID", 404)
+      );
     }
+
+    await SubmissionAssignment.findByIdAndDelete(req.params.id);
+    res.status(204).json({
+      status: "success",
+      message: "Assignment submission deleted successfully",
+      data: null,
+    });
   } catch (err) {
-    next(err);
+    next(
+      new AppError(`Error removing assignment submission: ${err.message}`, 500)
+    );
   }
 };

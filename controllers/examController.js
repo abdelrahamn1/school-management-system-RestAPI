@@ -1,5 +1,6 @@
 const Exam = require("../models/exmasModel");
-const AppError = require("../utils/AppErrorr");
+const AppError = require("../utils/AppErrorr.js");
+
 exports.createExam = async (req, res, next) => {
   try {
     const { title, description, date, startTime, examDuration, questions } =
@@ -8,17 +9,22 @@ exports.createExam = async (req, res, next) => {
     if (!date || !startTime)
       return next(
         new AppError(
-          "Date or startTime for exam is required! , format for date is :[YYYY-MM-DD]",
+          "Date and startTime for the exam are required! Format for date: [YYYY-MM-DD]",
           400
         )
       );
 
     const startDate = new Date(`${date} ${startTime}`);
-    const endDate = new Date(startDate.getTime() + examDuration * 60 * 1000);
-    console.log("Start Date and Time:", startDate);
-    console.log("End Date and Time:", endDate);
+    const currentDate = new Date();
 
-    // Save exam
+    // Ensure exam start date is in the future
+    if (startDate <= currentDate) {
+      return next(new AppError("The start date must be in the future!", 400));
+    }
+
+    const endDate = new Date(startDate.getTime() + examDuration * 60 * 1000);
+
+    // Save the exam
     const exam = await Exam.create({
       title,
       description,
@@ -39,7 +45,7 @@ exports.createExam = async (req, res, next) => {
 exports.getExam = async (req, res, next) => {
   try {
     const exam = await Exam.findById(req.params.id);
-    if (!exam) return next(new AppError("No exam Founded!", 404));
+    if (!exam) return next(new AppError("No exam found with this ID!", 404));
 
     res.status(200).json({
       status: "success",
@@ -53,13 +59,13 @@ exports.getExam = async (req, res, next) => {
 exports.updateExam = async (req, res, next) => {
   try {
     const exam = await Exam.findById(req.params.id);
-    if (!exam) return next(new AppError("No exam found!", 404));
+    if (!exam) return next(new AppError("No exam found with this ID!", 404));
 
     const { questions, date, startTime, examDuration, ...otherUpdates } =
       req.body;
 
-    // Update questions
-    let updatedQuestions;
+    // Update questions if provided
+    let updatedQuestions = null;
     if (questions && Array.isArray(questions)) {
       updatedQuestions = await Exam.findByIdAndUpdate(
         req.params.id,
@@ -68,26 +74,27 @@ exports.updateExam = async (req, res, next) => {
       );
     }
 
-    // Update time
-    let updatedTime;
+    // Update time if provided
+    let updatedTime = null;
     if (date || startTime || examDuration) {
       if (!date || !startTime || !examDuration) {
         return next(
           new AppError(
-            "Please provide [date], [startTime], and [examDuration] to update the exam time."
+            "Please provide [date], [startTime], and [examDuration] to update the exam time.",
+            400
           )
         );
       }
 
       // Construct new start and end dates
       const startDate = new Date(`${date} ${startTime}`);
-      if (startDate.getTime() <= Date.now()) {
-        return next(
-          new AppError("The start date must be in the future not in past")
-        );
-      }
-      const endDate = new Date(startDate.getTime() + examDuration * 60 * 1000);
+      const currentDate = new Date();
 
+      if (startDate <= currentDate) {
+        return next(new AppError("The start date must be in the future!", 400));
+      }
+
+      const endDate = new Date(startDate.getTime() + examDuration * 60 * 1000);
       updatedTime = await Exam.findByIdAndUpdate(
         req.params.id,
         { dueDate: startDate, examDuration: endDate },
@@ -95,8 +102,8 @@ exports.updateExam = async (req, res, next) => {
       );
     }
 
-    // Update other data
-    let updatedData;
+    // Update other fields if provided
+    let updatedData = null;
     if (Object.keys(otherUpdates).length > 0) {
       updatedData = await Exam.findByIdAndUpdate(req.params.id, otherUpdates, {
         new: true,
@@ -117,10 +124,9 @@ exports.updateExam = async (req, res, next) => {
 exports.deleteExam = async (req, res, next) => {
   try {
     const exam = await Exam.findById(req.params.id);
-    if (!exam) return next(new AppError("No exam found!", 404));
+    if (!exam) return next(new AppError("No exam found with this ID!", 404));
 
     await exam.deleteOne();
-
     res.status(204).json({
       status: "success",
       data: null,
@@ -132,40 +138,47 @@ exports.deleteExam = async (req, res, next) => {
 
 exports.submitExam = async (req, res, next) => {
   try {
-    let exam = await Exam.findById(req.params.id);
-
+    const exam = await Exam.findById(req.params.id);
     if (!exam) return next(new AppError("The Exam not found!", 404));
 
-    if (exam.dueDate > Date.now())
-      return next(new AppError("This exam is not Avalibale Now!", 400));
-
     const currentTime = new Date();
-    let grade = 0;
     const endDate = new Date(exam.examDuration);
 
-    // Check if exam time has expired
+    // Check if the exam is available
+    if (exam.dueDate > currentTime) {
+      return next(new AppError("This exam is not available yet!", 400));
+    }
+
+    // Check if the exam time has expired
     if (currentTime >= endDate) {
       return res.status(400).json({
         status: "fail",
         message: "Exam time has expired.",
       });
     }
+
     if (req.body.answers) {
       const answers = req.body.answers;
+      let grade = 0;
+
       exam.questions.forEach((question, index) => {
         if (answers[index] === question.correctAnswer) {
           grade++;
         }
       });
-    }
 
-    const percentage = (grade / exam.questions.length) * 100;
-    res.status(200).json({
-      status: "success",
-      message: `Your Grade is ${grade} / ${
-        exam.questions.length
-      } , Your Precentage is ${percentage.toFixed(2)} %`,
-    });
+      const percentage = (grade / exam.questions.length) * 100;
+      res.status(200).json({
+        status: "success",
+        message: `Your Grade is ${grade} / ${
+          exam.questions.length
+        }, Your Percentage is ${percentage.toFixed(2)}%`,
+      });
+    } else {
+      return next(
+        new AppError("Answers are required to submit the exam!", 400)
+      );
+    }
   } catch (err) {
     next(err);
   }
