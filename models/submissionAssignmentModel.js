@@ -31,6 +31,11 @@ const submitAssignmnetSchema = new mongoose.Schema({
       required: [true, "Teacher ID is required!"],
     },
   ],
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: Date,
 });
 
 const submitAssignmnet = mongoose.model(

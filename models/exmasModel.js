@@ -24,6 +24,11 @@ const examsSchema = new mongoose.Schema({
       correctAnswer: String,
     },
   ],
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: Date,
 });
 
 const Exam = mongoose.model("Exam", examsSchema);

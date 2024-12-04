@@ -28,6 +28,11 @@ const AttendenceSchema = new mongoose.Schema({
       required: [true, "Teacher ID is required!"],
     },
   ],
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: Date,
 });
 
 const Attendence = mongoose.model("Exam", AttendenceSchema);

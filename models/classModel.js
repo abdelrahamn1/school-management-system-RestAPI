@@ -25,9 +25,12 @@ const classSchema = new mongoose.Schema({
       required: [true, "Students is required"],
     },
   ],
-  grade: {
-    type: String,
+  createdAt: {
+    type: Date,
+    default: Date.now,
   },
+  updatedAt: Date,
+
 });
 
 classSchema.path("teachers").validate({

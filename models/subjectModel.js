@@ -12,6 +12,15 @@ const subjectSchemna = new mongoose.Schema({
   description: {
     type: String,
   },
+  level: {
+    type: Number,
+    required: [true, "level class for subject is required!"],
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: Date,
 });
 
 const Subject = mongoose.model("Subject", subjectSchemna);

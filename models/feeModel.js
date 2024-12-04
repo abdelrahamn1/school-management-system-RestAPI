@@ -6,14 +6,17 @@ const feeSchema = new mongoose.Schema({
     ref: "Student",
     required: [true, "Students is required"],
   },
-
-  feeAmount: {
+  feeDescription: {
     type: String,
+    required: [true, "Fee Description required!"],
+  },
+  feeAmount: {
+    type: Number,
     required: [true, "Fee Amount required!"],
   },
   dueDate: {
     type: Date,
-    required: [true, "due date required!"],
+    required: [true, "due date required! ,  Date formate is [YYYY-MM-DD]"],
   },
   paidStatus: {
     type: Boolean,

@@ -12,6 +12,11 @@ const eventSchema = new mongoose.Schema({
     required: [true, "Event Description is required!"],
   },
   date: Date,
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: Date,
 });
 
 const Event = mongoose.model("Event", eventSchema);

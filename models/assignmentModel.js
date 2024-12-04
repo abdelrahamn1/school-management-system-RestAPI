@@ -35,6 +35,7 @@ const assignmentSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  updatedAt: Date,
 });
 
 const Assignment = mongoose.model("Assignment", assignmentSchema);

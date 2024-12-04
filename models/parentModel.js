@@ -10,7 +10,6 @@ const parentSchema = new mongoose.Schema({
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Student",
-      required: [true, "Student Id is required"],
     },
   ],
   contactInfo: [
@@ -23,12 +22,17 @@ const parentSchema = new mongoose.Schema({
         ],
         required: [true, "Parent Phone is required!"],
       },
-      addrss: {
+      address: {
         type: String,
         required: [true, "Parent Address is required!"],
       },
     },
   ],
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: Date,
 });
 
 const Parent = mongoose.model("Parent", parentSchema);
