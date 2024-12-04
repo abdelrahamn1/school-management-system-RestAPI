@@ -5,16 +5,18 @@
 [![Postman Collection](https://img.shields.io/badge/Postman-Collection-blue)](https://www.postman.com/your-collection-link)
 
 
-# Full School Mnagemnt System RestAPI 
-> This is a restApI for Scholl managent System , provide wise controll that manger need!
+# Full School Management System REST API
+> A RESTful API for a comprehensive School Management System. This API offers various controls for admins, teachers, students, and parents to manage users, track assignments, handle grades, and more.
 
-## How it Works
- * admin controller to manipulate diffrent operations for users (add, update, delete, get) , and minpulate some reports and events or fees.
- * student can (add ,get, update , delete ) there own accounts too , and complete there information , know about assignmnets and sumbit it, or know about exams and submit exams , with best handel for all scenarios.
- * teachers cand(add, get,update, delete) there own accounts too , manipulte student information , like assign attendences , grads , and exams .
- * parents can (add,get,update,delete) there own accounts , track the performance for his childerns , and contact with teahchers.
- * login , signUp authentication  , with handel different errors , and more authentications
- * forget and reset password , using nodeMailer
+
+## How It Works
+
+1. **Admin Controller**: Provides CRUD operations for users, event reports, fee management, and more.
+2. **Student Functionality**: Students can add, update, delete, and view their own account information, view assignments, exams, and submit work.
+3. **Teacher Functionality**: Teachers can manage their accounts, input student data (attendance, grades, exams), and track student progress.
+4. **Parent Functionality**: Parents can view their children's performance, track progress, and communicate with teachers.
+5. **Authentication & Authorization**: Secure login and JWT token handling for authentication.
+6. **Password Reset**: Users can request a password reset via email, with token-based authentication and a user-friendly flow.
 
 
 ## Prerequisites
@@ -36,14 +38,14 @@ v22.11.0
 ### .env file requirements
 you must provide the following environment variables to run the application
 ```sh
-DATABASE = ...    //  Atlas MongoDb
-DATABASE_PASSWORD = .....   // Atlas MongoDb
-PORT = ......
-JWT_SECRET_KEY = ......
-JWT_EXPIRES = ......
-EMAIL = .......   
-EMAIL_USER = .......   //  nodeMailer
-EMAIL_PASS = ........   //  nodeMailer
+DATABASE = <your-mongo-db-uri>    # MongoDB Atlas URI
+DATABASE_PASSWORD = <your-db-password>  # MongoDB Atlas password
+PORT = <your-port>    # Port number (e.g., 5000)
+JWT_SECRET_KEY = <your-jwt-secret>    # Secret key for JWT
+JWT_EXPIRES = <token-expiration-time>  # JWT expiration (e.g., '1d')
+EMAIL = <your-email-address>    # Sender email for NodeMailer
+EMAIL_USER = <your-email-username>  # NodeMailer username
+EMAIL_PASS = <your-email-password>  # NodeMailer password
 
 
 ```
@@ -59,7 +61,7 @@ These instructions will get you a copy of the project up and running on your loc
 Start with cloning this repo on your local machine:
 
 ```sh
-$ git clone [https://github.com/abdelrahamn1/school-management-system-RestAPI]
+$ git clone [https://github.com/abdelrahamn1/school-management-system-RestAPI.git]
 ```
 
 To install and set up the library, run:
